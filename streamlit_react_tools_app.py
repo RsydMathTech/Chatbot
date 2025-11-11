@@ -200,10 +200,20 @@ if prompt:
         with st.spinner("Thinking..."):
             response = st.session_state.agent.invoke({"messages": messages})
 
-            if "messages" in response and len(response["messages"]) > 0:
-                answer = response["messages"][-1].content
-            else:
-                answer = "I'm sorry, I couldn't generate a response."
+            def safe_extract_response(resp):
+                if isinstance(resp, list):
+                    texts = []
+                    for item in resp:
+                        if item.get("type") == "text":
+                            texts.append(item["text"])
+                        else:
+                            texts.append(str(item))
+                    return "\n\n".join(texts)
+                elif isinstance(resp, dict) and "content" in resp:
+                    return resp["content"]
+                return str(resp)
+
+            answer = safe_extract_response(response)
 
     except Exception as e:
         answer = f"An error occurred: {e}"
